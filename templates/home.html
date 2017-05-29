@@ -1,13 +1,12 @@
 <nav class="navbar navbar-default">
   <div class="container-fluid">
     <div class="navbar-header">
-      <div class="navbar-brand"><img style="display: inline; height: 32px; position: relative; top: -4px;" src="images/realise_tiny_logo.png" alt="banner"
-        />
+      <div class="navbar-brand"><img style="display: inline; height: 32px; position: relative; top: -4px;" src="images/realise_tiny_logo.png" alt="banner"/>
         <span style="font-size: 1.2em; font-family: sans-serif; color: black;">Realise Agent</span></div>
     </div>
   </div>
 </nav>
-<div class="container">
+<div class="container" ng-controller="StatusController">
   <div class="row">
     <div class="col-md-6">
       <div class="panel panel-default">
@@ -64,19 +63,19 @@
         <div class="panel-body">
           <ul>
             <div class="row">
-              <div class="col col-md-4">
-                <li>Wait for calls</li>
+              <div class="col col-md-6">
+                <li>Wait for automated group calls</li>
               </div>
               <div class="col col-md-4">
-                <button class="btn btn-info" ng-disabled="!agentPhoneConnected()">Go Ready</button>
+                <button class="btn btn-info" ng-click="navigateReadyPage()" ng-disabled="!agentPhoneConnected()">Wait for Calls</button>
               </div>
             </div>
             <div class="row" style="padding-top: 8px">
-              <div class="col col-md-4">
-                <li>Place outbound call</li>
+              <div class="col col-md-6">
+                <li>Place manual outbound call to specified phone number</li>
               </div>
               <div class="col col-md-4">
-                <button class="btn btn-info" ng-disabled="!agentPhoneConnected()">Manual Call</button>
+                <button class="btn btn-info" ng-disabled="!agentPhoneConnected()">Place Manual Call</button>
               </div>
             </div>
           </ul>

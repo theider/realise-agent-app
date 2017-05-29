@@ -1,41 +1,31 @@
-HomeController = function ($scope, $state, Agent, AgentStatusWebSocketService, PhoneStatusWebSocketService, $cookies, $interval) {
+/**
+ * STATUS CONTROLLER
+ * Injects root scope with real-time status data from web sockets
+ */
+StatusController = function ($scope, $state, Agent, AgentStatusWebSocketService, PhoneStatusWebSocketService, $cookies, $rootScope, $interval) {
 
-  Agent.getSystemInfo().then(function(info) {
-    $scope.systemVersion = info.version;
-    $scope.hostName = info.hostName;
-  }, function() {
+  console.log('status controller start');
+
+  // this fast call validates each page landing and redirects to login if no longer authorized.
+  Agent.getSystemInfo().then(function (response) {
+    $rootScope.systemVersion = response.version;
+    $rootScope.hostName = response.hostName;
+  }, function () {
     $cookies.remove('realise-agent');
     $state.go('login');
   });
 
-  $scope.connectBridge = function(address) {
-    console.log('connect bridge ' + $scope.selectedPhone.address);
-    Agent.bridgeConnect($scope.selectedPhone.address);
-  };
-
-  $scope.disconnectBridge = function() {
-    console.log('release bridge');
-    Agent.bridgeRelease();      
-  };
-
-  $scope.updatePhoneAddress = function(phone) {
-    console.log('updated selected phone ' + JSON.stringify(phone));
-    PhoneStatusWebSocketService.updatePhoneAddress(phone.address);
-    $scope.deviceAddress = phone.address;
-    $scope.deviceState = undefined;    
-  };
-
-  $scope.handleAgentUpdate = function(status) {
-    $scope.hostTime = AgentStatusWebSocketService.getHostTime();
-    $scope.agentStatus = status.agentStatus;
-    console.log('agent status update ' + JSON.stringify($scope.agentStatus));
-    if(!$scope.selectedPhone) {
-      Agent.getPhones().then(function(phoneController) {
-        $scope.phoneController = phoneController;
+  $scope.handleAgentUpdate = function (status) {
+    $rootScope.hostTime = AgentStatusWebSocketService.getHostTime();
+    $rootScope.agentStatus = status.agentStatus;
+    console.log('agent status update ' + JSON.stringify($rootScope.agentStatus));
+    if (!$scope.selectedPhone) {
+      Agent.getPhones().then(function (phoneController) {
+        $rootScope.phoneController = phoneController;
         // select the phone that's in the agent status
-        if($scope.agentStatus) {
-          angular.forEach($scope.phoneController.phones, function(phone) {
-            if(phone.address === $scope.agentStatus.address) {
+        if ($rootScope.agentStatus) {
+          angular.forEach($scope.phoneController.phones, function (phone) {
+            if (phone.address === $scope.agentStatus.address) {
               $scope.selectedPhone = phone;
               PhoneStatusWebSocketService.updatePhoneAddress(phone.address);
             }
@@ -43,48 +33,38 @@ HomeController = function ($scope, $state, Agent, AgentStatusWebSocketService, P
         }
       });
     }
+    if (!$scope.$$phase) {
+      $scope.$apply();
+    }
   };
 
-  $scope.handleDeviceUpdate = function(deviceAddress, deviceState) {
+  $scope.handleCallPartyUpdate = function (status) {
+    $rootScope.hostTime = AgentStatusWebSocketService.getHostTime();
+    $rootScope.callPartyStatus = status.callPartyStatus;
+    console.log('call party status update ' + JSON.stringify($scope.callPartyStatus));
+    if (!$scope.$$phase) {
+      $scope.$apply();
+    }
+  };
+
+  $scope.handleDeviceUpdate = function (deviceAddress, deviceState) {
     console.log('device status update ' + deviceAddress + ':' + deviceState);
-    $scope.deviceAddress = deviceAddress;
-    $scope.deviceState = deviceState;    
-    $scope.$apply();
-  }
-
-  $scope.agentPhoneConnected = function() {
-    return (($scope.callPartyStatus.deviceState === 'CONNECTED') && ($scope.agentStatus.address === $scope.callPartyStatus.dn));
+    $rootScope.deviceAddress = deviceAddress;
+    $rootScope.deviceState = deviceState;
+    if (!$scope.$$phase) {
+      $scope.$apply();
+    }
   };
 
-  $scope.handleCallPartyUpdate = function(status) {
-    $scope.hostTime = AgentStatusWebSocketService.getHostTime();    
-    $scope.callPartyStatus = status.callPartyStatus;
-    console.log('call party status update ' + JSON.stringify($scope.callPartyStatus));    
-    $scope.apply();
-  };
-
-  PhoneStatusWebSocketService.openStatusWebSocket($scope.handleDeviceUpdate);
-  AgentStatusWebSocketService.openStatusWebSocket($scope.handleAgentUpdate, $scope.handleCallPartyUpdate);
-
-  console.log('HomeController started!');
-  $scope.goToReadyPage = function() {
-    $state.go('ready');
-  };
-
-  $scope.phoneStatusTimer = function() {
-    Agent.getPhones().then(function(phoneController) {
+  $scope.phoneStatusTimer = function () {
+    Agent.getPhones().then(function (phoneController) {
       $scope.phoneController = phoneController;
     });
-  };
+  };  
 
   $scope.intervalTimer = function () {
-    $scope.hostTime = AgentStatusWebSocketService.getHostTime();
-    if ($scope.agentStatus) {
-      if($scope.agentStatus.agentState !== 'WORKING') {
-        $interval.cancel($scope.intervalTimerPromise);
-        $interval.cancel($scope.phoneStatusTimerPromise);
-//        $state.go('dashboard')
-      }
+    $rootScope.hostTime = AgentStatusWebSocketService.getHostTime();
+    if ($rootScope.agentStatus) {
       // get the HOST TIME when state changed.
       var dateWhenChanged = new Date($scope.agentStatus.whenStateChanged);
       // ms in state
@@ -95,24 +75,91 @@ HomeController = function ($scope, $state, Agent, AgentStatusWebSocketService, P
       $scope.agentDuration = timeInStateMs;
       $scope.agentStateText = $scope.agentStatus.agentState;
     }
-
   };
-  
   $scope.intervalTimerPromise = $interval($scope.intervalTimer, 750);
-  $scope.phoneStatusTimerPromise = $interval($scope.phoneStatusTimer, 10000);
+  if (!$rootScope.statusStarted) {
+    PhoneStatusWebSocketService.openStatusWebSocket($scope.handleDeviceUpdate);
+    AgentStatusWebSocketService.openStatusWebSocket($scope.handleAgentUpdate, $scope.handleCallPartyUpdate);    
+    $scope.phoneStatusTimerPromise = $interval($scope.phoneStatusTimer, 10000);
+    $rootScope.statusStarted = true;
+  }
+
+}
+
+/**
+ * HOME PAGE CONTROLLER
+ * This page allows agent to select the phone station, seize the phone and then place a manual call or go into predictive call pool.
+ */
+HomeController = function ($scope, $state, Agent, AgentStatusWebSocketService, PhoneStatusWebSocketService, $cookies, $interval, $rootScope) {
+  
+  $scope.navigateReadyPage = function () {
+    $state.go('ready');
+  };
+
+  $scope.connectBridge = function (address) {
+    console.log('connect bridge ' + $rootScope.deviceAddress);
+    Agent.bridgeConnect($rootScope.deviceAddress);
+  };
+
+  $scope.disconnectBridge = function () {
+    console.log('release bridge');
+    Agent.bridgeRelease();
+  };
+
+  $scope.updatePhoneAddress = function (phone) {
+    console.log('updated selected phone ' + JSON.stringify(phone));
+    PhoneStatusWebSocketService.updatePhoneAddress(phone.address);
+    $rootScope.deviceAddress = phone.address;
+    $rootScope.deviceState = undefined;
+  };
+
+  $scope.agentPhoneConnected = function () {
+    if (!$rootScope.callPartyStatus) {
+      return false;
+    }
+    if (!$rootScope.agentStatus) {
+      return false;
+    }
+    return (($rootScope.deviceState === 'CONNECTED') && ($rootScope.deviceAddress === $rootScope.callPartyStatus.dn));
+  };
+
+  $scope.goToReadyPage = function () {
+    // $interval.cancel($scope.intervalTimerPromise);
+    // $interval.cancel($scope.phoneStatusTimerPromise);
+    $state.go('ready');
+  };
+
 
 
 };
 
-ReadyController = function ($scope) {
-  console.log('ReadyController started!');
-  $scope.readyPageMessage = 'this is from the ready controller';
+/**
+ * READY/UNREADY PAGE CONTROLLER
+ * Agent can change readiness state and go back to home page.
+ */
+ReadyController = function ($scope, $state, Agent, AgentStatusWebSocketService, $cookies, $interval) {
+  console.log('ReadyController started');
+
+  $scope.agentReady = function () {
+    Agent.ready();
+  };
+
+  $scope.agentUnready = function () {
+    Agent.unready();
+  };
+
 };
+
+/**
+ * ROUTES
+ * This is where controllers and page templates are specified.
+ */
 
 (function () {
   return {
     controllers: {
       // controllers are defined in this list
+      'StatusController': StatusController,
       'HomeController': HomeController,
       'ReadyController': ReadyController
     },

@@ -1,4 +1,75 @@
-<div>
-  <h1>Ready Page</h1>
-  <p>{{readyPageMessage}}</p>
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <div class="navbar-brand"><img style="display: inline; height: 32px; position: relative; top: -4px;" src="images/realise_tiny_logo.png" alt="banner"/>
+        <span style="font-size: 1.2em; font-family: sans-serif; color: black;">Realise Agent</span></div>
+    </div>
+  </div>
+</nav>
+<div class="container" ng-controller="StatusController">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Current Time</h3>
+        </div>
+        <div class="panel-body">
+          <div>{{hostTime| date : 'medium'}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Agent</h3>
+        </div>
+        <div class="panel-body">
+          <div>{{agentStatus.name}} {{agentStateText}} {{agentDuration| stateDuration}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Phone</h3>
+        </div>
+        <div class="panel-body">
+          <div>
+            <div style="padding: 8px;">
+              <span id="phoneStatusText">{{callPartyStatus.dn}} {{callPartyStatus.deviceState}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">State</h3>
+        </div>
+        <div class="panel-body">
+          <ul>
+            <div class="row">
+              <div class="col col-md-3">
+                <button ng-disabled="agentStatus.agentState !== 'NOTREADY'" class="btn btn-primary" ng-click="agentReady()">Ready</button>
+              </div>
+              <div class="col col-md-3">
+                <button ng-disabled="agentStatus.agentState !== 'READY'"  class="btn btn-info" ng-click="agentUnready()">Not Ready</button>
+              </div>
+            </div>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+<footer class="footer">
+  <div class="container">
+    <span>{{systemVersion}}</span>
+    <span style="position: absolute; right: 16px;">{{hostName}}</span>
+  </div>
+</footer>
