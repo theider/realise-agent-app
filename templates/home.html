@@ -1,0 +1,93 @@
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <div class="navbar-brand"><img style="display: inline; height: 32px; position: relative; top: -4px;" src="images/realise_tiny_logo.png" alt="banner"
+        />
+        <span style="font-size: 1.2em; font-family: sans-serif; color: black;">Realise Agent</span></div>
+    </div>
+  </div>
+</nav>
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Current Time</h3>
+        </div>
+        <div class="panel-body">
+          <div>{{hostTime| date : 'medium'}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Agent</h3>
+        </div>
+        <div class="panel-body">
+          <div>{{agentStatus.name}} {{agentStateText}} {{agentDuration| stateDuration}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Phone</h3>
+        </div>
+        <div class="panel-body">
+          <div>
+            <div style="padding: 8px;">
+              <span style="padding-right: 8px;">Address</span>
+              <select ng-disabled="deviceState !== 'IDLE'" id="phoneAddressSelect" ng-options="phone as phone.address for phone in phoneController.phones track by phone.address"
+                ng-change="updatePhoneAddress(selectedPhone)" ng-model="selectedPhone"></select>
+            </div>
+            <div style="padding: 8px;">
+              <span id="phoneStatusText">{{deviceAddress}} {{deviceState}}</span>
+            </div>
+            <div style="padding: 8px;">
+              <button class="btn btn-primary" ng-show="selectedPhone" ng-disabled="agentPhoneConnected()" ng-click="connectBridge()">Connect</button>
+              <button class="btn btn-info" ng-show="selectedPhone" ng-disabled="!agentPhoneConnected()" ng-click="disconnectBridge()">Release</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Options</h3>
+        </div>
+        <div class="panel-body">
+          <ul>
+            <div class="row">
+              <div class="col col-md-4">
+                <li>Wait for calls</li>
+              </div>
+              <div class="col col-md-4">
+                <button class="btn btn-info" ng-disabled="!agentPhoneConnected()">Go Ready</button>
+              </div>
+            </div>
+            <div class="row" style="padding-top: 8px">
+              <div class="col col-md-4">
+                <li>Place outbound call</li>
+              </div>
+              <div class="col col-md-4">
+                <button class="btn btn-info" ng-disabled="!agentPhoneConnected()">Manual Call</button>
+              </div>
+            </div>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <span>{{systemVersion}}</span>
+    <span style="position: absolute; right: 16px;">{{hostName}}</span>
+  </div>
+</footer>
