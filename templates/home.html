@@ -1,11 +1,38 @@
-<nav class="navbar navbar-default">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <div class="navbar-brand"><img style="display: inline; height: 32px; position: relative; top: -4px;" src="images/realise_tiny_logo.png" alt="banner"/>
-        <span style="font-size: 1.2em; font-family: sans-serif; color: black;">Realise Agent</span></div>
-    </div>
-  </div>
-</nav>
+<style>
+  .navbar-brand-text {
+    font-size: 18px;
+  }
+
+  .navbar-alignment {
+    padding-top: 10px;
+  }
+
+  .navbar-options {
+    margin-right: 24px;
+  }
+
+ .navbar-options a,a:hover,a:visited,a:link,a:active {
+    color: black;
+    text-decoration: none;
+  }
+
+</style>
+<div ng-controller="NavController">
+  <nav class="navbar navbar-default navbar-alignment" role="navigation">
+    <span navbar-brand class="navbar-brand-text"><img style="display: inline; height: 32px; position: relative; top: -4px;" src="images/realise_tiny_logo.png" alt="banner"/>Realise Agent</span>
+    <span class="navbar-right navbar-options" uib-dropdown on-toggle="toggled(open)">
+      <a href id="simple-dropdown" uib-dropdown-toggle class="navbar-default"><span class="caret"></span> Options</a>
+      <ul class="dropdown-menu" uib-dropdown-menu aria-labelledby="simple-dropdown">
+        <li>
+          <a href>Update Password</a>
+        </li>
+        <li>
+          <a ng-click="signOut()" href>Sign Out</a>
+        </li>
+      </ul>
+    </span>
+  </nav>
+</div>
 <div class="container" ng-controller="StatusController">
   <div class="row">
     <div class="col-md-6">
@@ -37,17 +64,17 @@
         </div>
         <div class="panel-body">
           <div>
-            <div style="padding: 8px;">
+            <div ng-hide="agentPhoneConnected()" style="padding: 8px;">
               <span style="padding-right: 8px;">Address</span>
-              <select ng-disabled="deviceState !== 'IDLE'" id="phoneAddressSelect" ng-options="phone as phone.address for phone in phoneController.phones track by phone.address"
+              <select id="phoneAddressSelect" ng-options="phone as phone.address for phone in phoneController.phones track by phone.address"
                 ng-change="updatePhoneAddress(selectedPhone)" ng-model="selectedPhone"></select>
             </div>
             <div style="padding: 8px;">
               <span id="phoneStatusText">{{deviceAddress}} {{deviceState}}</span>
             </div>
             <div style="padding: 8px;">
-              <button class="btn btn-primary" ng-show="selectedPhone" ng-disabled="agentPhoneConnected()" ng-click="connectBridge()">Connect</button>
-              <button class="btn btn-info" ng-show="selectedPhone" ng-disabled="!agentPhoneConnected()" ng-click="disconnectBridge()">Release</button>
+              <button class="btn btn-primary" ng-show="deviceAddress" ng-disabled="agentPhoneConnected()" ng-click="connectBridge()">Connect</button>
+              <button class="btn btn-info" ng-show="deviceAddress" ng-disabled="!agentPhoneConnected()" ng-click="disconnectBridge()">Release</button>
             </div>
           </div>
         </div>

@@ -1,0 +1,17 @@
+<div>
+  <div class="modal-header">
+    <h3 class="modal-title">Sign Out</h3>
+  </div>
+  <div class="modal-body">
+    <form>
+      <div class="form-group">
+        <label for="logoutReasonSelect">Logout Reason</label>
+        <select id="logoutReasonSelect" ng-options="logoutReason as logoutReason.reasonText for logoutReason in logoutReasons track by logoutReason.reasonCode" ng-model="logoutReason"></select>        
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary" ng-disabled="!logoutReason" type="button" ng-click="ok()">Sign Out</button>
+    <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+  </div>
+</div>

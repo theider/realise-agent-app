@@ -1,3 +1,22 @@
+NavController = function($scope, $uibModal, Agent) {
+  $scope.signOut = function() {
+    console.log('sign out');
+    $uibModal.open({
+      templateUrl: '/host/webresources/agent/template/signout-modal',
+      controller: 'SignoutController',
+      resolve: {
+      }
+    }).result.then(function (logoutReason) {
+      // MODAL OK
+      Agent.logout(logoutReason.reasonCode);
+      $cookies.remove('realise-agent');
+      $state.go('login');      
+    }, function () {
+      // CANCEL MODAL           
+    });    
+  }
+};
+
 /**
  * STATUS CONTROLLER
  * Injects root scope with real-time status data from web sockets
@@ -19,6 +38,12 @@ StatusController = function ($scope, $state, Agent, AgentStatusWebSocketService,
     $rootScope.hostTime = AgentStatusWebSocketService.getHostTime();
     $rootScope.agentStatus = status.agentStatus;
     console.log('agent status update ' + JSON.stringify($rootScope.agentStatus));
+    if($scope.agentStatus) {
+      if($scope.agentStatus.agentState === 'WORKING') {
+        // jump to contact page
+        $state.go('contact');
+      }
+    }
     if (!$scope.selectedPhone) {
       Agent.getPhones().then(function (phoneController) {
         $rootScope.phoneController = phoneController;
@@ -47,21 +72,6 @@ StatusController = function ($scope, $state, Agent, AgentStatusWebSocketService,
     }
   };
 
-  $scope.handleDeviceUpdate = function (deviceAddress, deviceState) {
-    console.log('device status update ' + deviceAddress + ':' + deviceState);
-    $rootScope.deviceAddress = deviceAddress;
-    $rootScope.deviceState = deviceState;
-    if (!$scope.$$phase) {
-      $scope.$apply();
-    }
-  };
-
-  $scope.phoneStatusTimer = function () {
-    Agent.getPhones().then(function (phoneController) {
-      $scope.phoneController = phoneController;
-    });
-  };  
-
   $scope.intervalTimer = function () {
     $rootScope.hostTime = AgentStatusWebSocketService.getHostTime();
     if ($rootScope.agentStatus) {
@@ -76,11 +86,10 @@ StatusController = function ($scope, $state, Agent, AgentStatusWebSocketService,
       $scope.agentStateText = $scope.agentStatus.agentState;
     }
   };
+
   $scope.intervalTimerPromise = $interval($scope.intervalTimer, 750);
   if (!$rootScope.statusStarted) {
-    PhoneStatusWebSocketService.openStatusWebSocket($scope.handleDeviceUpdate);
-    AgentStatusWebSocketService.openStatusWebSocket($scope.handleAgentUpdate, $scope.handleCallPartyUpdate);    
-    $scope.phoneStatusTimerPromise = $interval($scope.phoneStatusTimer, 10000);
+    AgentStatusWebSocketService.openStatusWebSocket($scope.handleAgentUpdate, $scope.handleCallPartyUpdate);
     $rootScope.statusStarted = true;
   }
 
@@ -91,7 +100,11 @@ StatusController = function ($scope, $state, Agent, AgentStatusWebSocketService,
  * This page allows agent to select the phone station, seize the phone and then place a manual call or go into predictive call pool.
  */
 HomeController = function ($scope, $state, Agent, AgentStatusWebSocketService, PhoneStatusWebSocketService, $cookies, $interval, $rootScope) {
-  
+
+  $scope.isNavCollapsed = true;
+  $scope.isCollapsed = false;
+  $scope.isCollapsedHorizontal = false;
+
   $scope.navigateReadyPage = function () {
     $state.go('ready');
   };
@@ -129,7 +142,25 @@ HomeController = function ($scope, $state, Agent, AgentStatusWebSocketService, P
     $state.go('ready');
   };
 
+  $scope.handleDeviceUpdate = function (deviceAddress, deviceState) {
+    console.log('device status update ' + deviceAddress + ':' + deviceState);
+    $rootScope.deviceAddress = deviceAddress;
+    $rootScope.deviceState = deviceState;
+    if (!$scope.$$phase) {
+      $scope.$apply();
+    }
+  };
 
+  $scope.phoneStatusTimer = function () {
+    Agent.getPhones().then(function (phoneController) {
+      console.log('phone controller update ' + JSON.stringify(phoneController));
+      $scope.phoneController = phoneController;
+    });
+  };
+
+  $scope.phoneStatusTimerPromise = $interval($scope.phoneStatusTimer, 10000);
+
+  PhoneStatusWebSocketService.openStatusWebSocket($scope.handleDeviceUpdate);
 
 };
 
@@ -147,8 +178,41 @@ ReadyController = function ($scope, $state, Agent, AgentStatusWebSocketService, 
   $scope.agentUnready = function () {
     Agent.unready();
   };
-
 };
+
+/**
+ * CONTACT PAGE CONTROLLER
+ * We jump to this page when the agent transitions to a working state..
+ */
+ContactController = function ($scope, $state, Agent, AgentStatusWebSocketService, $cookies) {
+  console.log('ContactController started');
+  Agent.getAgentContext().then(function(context) {
+    console.log('get agent context ' + JSON.stringify(context));
+    $scope.agentContext = context;
+  }, function(error) {
+    console.error('get agent context error ' + JSON.stringify(error));
+  });
+};
+
+/**
+ * SIGNOUT CONTROLLER
+ * Agent sign out with a logout reason code.
+ */
+SignoutController = function ($scope, $state, Agent, $uibModalInstance) {
+  console.log('SignoutController started');
+  Agent.getLogoutReasons().then(function(result) {
+    $scope.logoutReasons = result;
+  });
+  $scope.ok = function () {
+    $uibModalInstance.close($scope.logoutReason);
+  };
+
+  $scope.cancel = function () {
+    $uibModalInstance.dismiss();
+  };
+};
+
+
 
 /**
  * ROUTES
@@ -160,8 +224,11 @@ ReadyController = function ($scope, $state, Agent, AgentStatusWebSocketService, 
     controllers: {
       // controllers are defined in this list
       'StatusController': StatusController,
+      'NavController': NavController,
+      'SignoutController': SignoutController,
       'HomeController': HomeController,
-      'ReadyController': ReadyController
+      'ReadyController': ReadyController,
+      'ContactController': ContactController
     },
     states: {
       // routes are defined in this list
@@ -174,6 +241,11 @@ ReadyController = function ($scope, $state, Agent, AgentStatusWebSocketService, 
         url: '/ready',
         templateUrl: '/host/webresources/agent/template/ready',
         controller: 'ReadyController'
+      },
+      'contact': {
+        url: '/contact',
+        templateUrl: '/host/webresources/agent/template/contact',
+        controller: 'ContactController'
       }
     }
   };
