@@ -234,17 +234,17 @@ SignoutController = function ($scope, $state, Agent, $uibModalInstance) {
       // routes are defined in this list
       'home': {
         url: '/home',
-        templateUrl: '/host/webresources/agent/template/home',
+        templateUrl: '/host/webresources/agent/template/home.html',
         controller: 'HomeController'
       },
       'ready': {
         url: '/ready',
-        templateUrl: '/host/webresources/agent/template/ready',
+        templateUrl: '/host/webresources/agent/template/ready.html',
         controller: 'ReadyController'
       },
       'contact': {
         url: '/contact',
-        templateUrl: '/host/webresources/agent/template/contact',
+        templateUrl: '/host/webresources/agent/template/contact.html',
         controller: 'ContactController'
       }
     }
